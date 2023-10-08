@@ -240,12 +240,58 @@ class ParticleFilter(Node):
             self.current_odom_xy_theta = new_odom_xy_theta
         else:
             self.current_odom_xy_theta = new_odom_xy_theta
+            return
 
-        particle_list = np.array(self.particle_cloud)
+        prev_x = old_odom_xy_theta[0]
+        prev_y = old_odom_xy_theta[1]
+        prev_theta = old_odom_xy_theta[2]
+        prev_odom_trans = np.array(
+            [
+                [np.cos(prev_theta), -1 * np.sin(prev_theta), prev_x],
+                [np.sin(prev_theta), np.cos(prev_theta), prev_y],
+                [0, 0, 1],
+            ]
+        )
+        new_x = new_odom_xy_theta[0]
+        new_y = new_odom_xy_theta[1]
+        new_theta = new_odom_xy_theta[2]
+        new_odom_trans = np.array(
+            [
+                [np.cos(new_theta), -1 * np.sin(new_theta), new_x],
+                [np.sin(new_theta), np.cos(new_theta), new_y],
+                [0, 0, 1],
+            ]
+        )
+        # Create a transformation matrix for applying relative odom transformations
+        relative_pos_delta = np.linalg.inv(prev_odom_trans) @ new_odom_trans
 
-        return
+        # particle_stack = np.empty()
+        # particle_thetas = []
+        # for particle in self.particle_cloud:
+        #   particle_vector = np.array([particle.x], [particle.y], 1)
+        #   particle_stack = np.hstack((particle_stack, particle_vector))
+        #   particle_thetas.append(particle.theta)
 
-        # TODO: modify particles using delta
+        for particle in self.particle_cloud:
+            prev_particle_trans = np.array(
+                [
+                    [np.cos(particle.theta), -1 * np.sin(particle.theta), particle.x],
+                    [np.sin(particle.theta), np.cos(particle.theta), particle.y],
+                    [0, 0, 1],
+                ]
+            )
+            new_particle_trans = (
+                prev_particle_trans
+                @ relative_pos_delta
+                @ np.linalg.inv(prev_particle_trans)
+            )
+            prev_particle_coord = np.array([particle.x, particle.y, 1])
+            new_particle_vector = new_particle_trans @ prev_particle_coord
+            particle.x = new_particle_vector[0]
+            particle.y = new_particle_vector[1]
+            particle.theta += math.atan2(
+                relative_pos_delta[1][0], relative_pos_delta[0][0]
+            )
 
     def resample_particles(self):
         """Resample the particles according to the new particle weights.
