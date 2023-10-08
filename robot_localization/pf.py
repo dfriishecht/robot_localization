@@ -82,7 +82,7 @@ class ParticleFilter(Node):
         self.scan_topic = "scan"  # the topic where we will get laser scans from
 
         self.n_particles = 300  # the number of particles to use
-
+        self.laser_dist_thresh = 0.1
         self.d_thresh = 0.2  # the amount of linear movement before performing an update
         self.a_thresh = (
             math.pi / 6
@@ -308,7 +308,22 @@ class ParticleFilter(Node):
         r: the distance readings to obstacles
         theta: the angle relative to the robot frame for each corresponding reading
         """
-        # TODO: implement this
+        for particle in self.particle_cloud:
+            weight_counter = 0
+            for i in range(len(r)):
+                x_distance_offset = r[i] * np.cos(particle.theta + theta[i])
+                laser_x_coord = particle.x + x_distance_offset
+                y_distance_offset = r[i] * np.sin(particle.theta + theta[i])
+                laser_y_coord = particle.y + y_distance_offset
+                dist_from_obstacle = self.occupancy_field.get_closest_obstacle_distance(
+                    x_distance_offset, y_distance_offset
+                )
+                if dist_from_obstacle < self.laser_dist_thresh:
+                    weight = (
+                        self.laser_dist_thresh - dist_from_obstacle
+                    ) / self.laser_dist_thresh
+                    weight_counter += weight
+            particle.w = weight_counter
         pass
 
     def update_initial_pose(self, msg):
