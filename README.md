@@ -11,4 +11,12 @@ The project is focused on an implementation of a particle-filter algorithm, whic
 - Particles with laser readings close to the robot readings are assigned a weight, with a greater weight the closer the particles are.
 - Particles with a low weight are redistributed on the high weight particles.
 - These new distributes are used to contionusly update the robot's hypothetical position.
-- Overtime, as the robot moves about the environment more, the particles converge on the robot's true position, resulting in the robots position within the environment becomming known.
+- Over time, as the robot moves about the environment more, the particles converge on the robot's true position, resulting in the robots position within the environment becomming known.
+
+This report will go over each of these steps, detailing approach, actions the code performs, and limitations.
+
+## Position and Particle Initialization
+
+
+## Particle Position Update
+
