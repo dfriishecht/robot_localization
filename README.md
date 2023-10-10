@@ -85,4 +85,5 @@ y_p\\
 1
 \end{bmatrix}
 $$
+
 The updated particle position vector is then applied to each particles x and y class variable.
