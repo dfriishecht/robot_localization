@@ -20,3 +20,69 @@ This report will go over each of these steps, detailing approach, actions the co
 
 ## Particle Position Update
 
+Particle positions are updated with the **update_particles_with_odom():** function.
+The function first samples the current pose of the robot. A pose contains x and y position, as well as rotation in radians (represented as theta). Both the current robot pose, as well as the
+previous robot pose, are then stored in transformation matrices with the following format:
+
+$$
+\begin{bmatrix}
+cos(\theta_0) & -sin(\theta_0) & x_0\\
+sin(\theta_0) & cos(\theta_0) & y_0\\
+0 & 0 & 1
+\end{bmatrix}
+$$
+
+$$
+\begin{bmatrix}
+cos(\theta_1) & -sin(\theta_1) & x_1\\
+sin(\theta_1) & cos(\theta_1) & y_1\\
+0 & 0 & 1
+\end{bmatrix}
+$$
+
+where the subscript 0 represents the previous position, and subscript 1 represents the new position. We can then find the difference, or delta, between these two transformation matrices with the following equation:
+
+$$
+\begin{bmatrix}
+cos(\theta_0) & -sin(\theta_0) & x_0\\
+sin(\theta_0) & cos(\theta_0) & y_0\\
+0 & 0 & 1
+\end{bmatrix}^- * 
+\begin{bmatrix}
+cos(\theta_1) & -sin(\theta_1) & x_1\\
+sin(\theta_1) & cos(\theta_1) & y_1\\
+0 & 0 & 1
+\end{bmatrix}
+$$
+
+This delta matrix can be used in conjunction with each particle's own transformation matrix to update each particle's position relative to updates in the robot's odometry position.
+In the equation below $\theta_p$, $x_p$, and $y_p$ represent the particles pose:
+
+$$
+\begin{bmatrix}
+cos(\theta_p) & -sin(\theta_p) & x_p\\
+sin(\theta_p) & cos(\theta_p) & y_p\\
+0 & 0 & 1
+\end{bmatrix} *
+\begin{bmatrix}
+cos(\theta_0) & -sin(\theta_0) & x_0\\
+sin(\theta_0) & cos(\theta_0) & y_0\\
+0 & 0 & 1
+\end{bmatrix}^- * 
+\begin{bmatrix}
+cos(\theta_1) & -sin(\theta_1) & x_1\\
+sin(\theta_1) & cos(\theta_1) & y_1\\
+0 & 0 & 1
+\end{bmatrix} *
+\begin{bmatrix}
+cos(\theta_p) & -sin(\theta_p) & x_p\\
+sin(\theta_p) & cos(\theta_p) & y_p\\
+0 & 0 & 1
+\end{bmatrix}^- *
+\begin{bmatrix}
+x_p\\
+y_p\\
+1
+\end{bmatrix}
+$$
+The updated particle position vector is then applied to each particles x and y class variable.
