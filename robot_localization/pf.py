@@ -302,7 +302,7 @@ class ParticleFilter(Node):
         """
         # make sure the distribution is normalized
         self.normalize_particles()
-        # TODO: fill out the rest of the implementation
+        # resample particles through multinomial resampling
         resampled_particles = []
         cumulative_sum = 0
         for _ in range(self.n_particles):
@@ -313,7 +313,13 @@ class ParticleFilter(Node):
                 cumulative_sum -= self.particle_cloud[index].w
                 index += 1
             resampled_particles.append(self.particle_cloud[index])
+
         self.particle_cloud = resampled_particles
+        # use a Gaussian noise to add variance to each particles x and y position
+        for particle in self.particle_cloud:
+            particle.x = np.random.Generator.normal(loc=particle.x, scale=1.0)
+            particle.y = np.random.Generator.normal(loc=particle.y, scale=1.0)
+            particle.w = 0.0
 
     def update_particles_with_laser(self, r, theta):
         """Updates the particle weights in response to the scan data
