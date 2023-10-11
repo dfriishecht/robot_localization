@@ -14,6 +14,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, Point, Quaternion
 from rclpy.duration import Duration
 import math
 import time
+import random
 import numpy as np
 from occupancy_field import OccupancyField
 from helper_functions import TFHelper
@@ -302,6 +303,17 @@ class ParticleFilter(Node):
         # make sure the distribution is normalized
         self.normalize_particles()
         # TODO: fill out the rest of the implementation
+        resampled_particles = []
+        cumulative_sum = 0
+        for _ in range(self.n_particles):
+            rand_val = random.random()
+            cumulative_sum += rand_val
+            index = 0
+            while cumulative_sum > self.particle_cloud[index].w:
+                cumulative_sum -= self.particle_cloud[index].w
+                index += 1
+            resampled_particles.append(self.particle_cloud[index])
+        self.particle_cloud = resampled_particles
 
     def update_particles_with_laser(self, r, theta):
         """Updates the particle weights in response to the scan data
