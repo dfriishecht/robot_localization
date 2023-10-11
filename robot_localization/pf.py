@@ -266,13 +266,6 @@ class ParticleFilter(Node):
         # Create a transformation matrix for applying relative odom transformations
         relative_pos_delta = np.linalg.inv(prev_odom_trans) @ new_odom_trans
 
-        # particle_stack = np.empty()
-        # particle_thetas = []
-        # for particle in self.particle_cloud:
-        #   particle_vector = np.array([particle.x], [particle.y], 1)
-        #   particle_stack = np.hstack((particle_stack, particle_vector))
-        #   particle_thetas.append(particle.theta)
-
         for particle in self.particle_cloud:
             prev_particle_trans = np.array(
                 [
