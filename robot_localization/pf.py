@@ -2,6 +2,7 @@
 # pylint: skip-file
 """ This is the starter code for the robot localization project """
 
+from copy import deepcopy
 import rclpy
 from threading import Thread
 from rclpy.time import Time
@@ -17,7 +18,7 @@ import time
 import random
 import numpy as np
 from occupancy_field import OccupancyField
-from helper_functions import TFHelper
+from helper_functions import TFHelper, draw_random_sample
 from rclpy.qos import qos_profile_sensor_data
 from angle_helpers import quaternion_from_euler
 
@@ -85,6 +86,9 @@ class ParticleFilter(Node):
 
         self.n_particles = 300  # the number of particles to use
 
+
+        self.laser_dist_thresh = 0.1
+        
         self.d_thresh = 0.2  # the amount of linear movement before performing an update
         self.a_thresh = (
             math.pi / 6
@@ -166,10 +170,6 @@ class ParticleFilter(Node):
         (r, theta) = self.transform_helper.convert_scan_to_polar_in_robot_frame(
             msg, self.base_frame
         )
-
-        (r, theta) = self.transform_helper.convert_scan_to_polar_in_robot_frame(
-            msg, self.base_frame
-        )
         print("r[0]={0}, theta[0]={1}".format(r[0], theta[0]))
         # clear the current scan so that we can process the next one
         self.scan_to_process = None
@@ -210,9 +210,8 @@ class ParticleFilter(Node):
             (1): compute the mean pose
             (2): compute the most likely pose (i.e. the mode of the distribution)
         """
-        # first make sure that the particle weights are normalized
         self.normalize_particles()
-
+        
         # TODO: assign the latest pose into self.robot_pose as a geometry_msgs.Pose object
         # just to get started we will fix the robot's pose to always be at the origin
         self.robot_pose = Pose()
@@ -221,9 +220,7 @@ class ParticleFilter(Node):
                 self.robot_pose, self.odom_pose
             )
         else:
-            self.get_logger().warn(
-                "Can't set map->odom transform since no odom data received"
-            )
+            self.get_logger().warn("Can't set map->odom transform since no odom data received")
 
     def update_particles_with_odom(self):
         """Update the particles using the newly given odometry pose.
@@ -237,11 +234,6 @@ class ParticleFilter(Node):
         # compute the change in x,y,theta since our last update
         if self.current_odom_xy_theta:
             old_odom_xy_theta = self.current_odom_xy_theta
-            delta = (
-                new_odom_xy_theta[0] - self.current_odom_xy_theta[0],
-                new_odom_xy_theta[1] - self.current_odom_xy_theta[1],
-                new_odom_xy_theta[2] - self.current_odom_xy_theta[2],
-            )
 
             self.current_odom_xy_theta = new_odom_xy_theta
         else:
@@ -300,23 +292,30 @@ class ParticleFilter(Node):
         """
         # make sure the distribution is normalized
         self.normalize_particles()
-        # resample particles through multinomial resampling
-        resampled_particles = []
-        cumulative_sum = 0
-        for _ in range(self.n_particles):
-            rand_val = random.random()
-            cumulative_sum += rand_val
-            index = 0
-            while cumulative_sum > self.particle_cloud[index].w:
-                cumulative_sum -= self.particle_cloud[index].w
-                index += 1
-            resampled_particles.append(self.particle_cloud[index])
-
-        self.particle_cloud = resampled_particles
-        # use a Gaussian noise to add variance to each particles x and y position
+        particle_weight_sum = 0
         for particle in self.particle_cloud:
-            particle.x = np.random.Generator.normal(loc=particle.x, scale=1.0)
-            particle.y = np.random.Generator.normal(loc=particle.y, scale=1.0)
+            particle_weight_sum += particle.w
+        print("Particle weight sum:")
+        print(particle_weight_sum)
+        # resample particles through multinomial resampling
+        new_particles = []
+        resampled_particles = draw_random_sample(self.particle_cloud, [particle.w for particle in self.particle_cloud], len(self.particle_cloud))
+        # cumulative_sum = 0
+        # for _ in range(self.n_particles):
+        #     rand_val = random.random()
+        #     cumulative_sum += rand_val
+        #     index = 0
+        #     while cumulative_sum > self.particle_cloud[index].w:
+        #         cumulative_sum -= self.particle_cloud[index].w
+        #         index += 1
+        #     resampled_particles.append(self.particle_cloud[index])
+        self.particle_cloud = resampled_particles
+
+        # use a Gaussian noise to add variance to each particles x and y position
+        print(f"Number of particles: {len(self.particle_cloud)}")
+        for particle in self.particle_cloud:
+            # particle.x = np.random.normal(loc=particle.x, scale=0.01)
+            # particle.y = np.random.normal(loc=particle.y, scale=0.01)
             particle.w = 0.0
 
     def update_particles_with_laser(self, r, theta):
@@ -366,7 +365,7 @@ class ParticleFilter(Node):
                 self.odom_pose
             )
         self.particle_cloud = []
-        xy_scale = 1
+        xy_scale = 0.1
         theta_scale = 1
         for i in range(self.n_particles):
             self.particle_cloud.append(
@@ -384,7 +383,10 @@ class ParticleFilter(Node):
         """Make sure the particle weights define a valid distribution (i.e. sum to 1.0)"""
         total_weight = np.sum([particle.w for particle in self.particle_cloud])
         for particle in self.particle_cloud:
+            print(f"Took particle with weight {particle.w} and updated it to have weight {particle.w / total_weight}")
             particle.w = particle.w / total_weight
+            
+        
 
     def publish_particles(self, timestamp):
         msg = ParticleCloud()
