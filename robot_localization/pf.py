@@ -86,9 +86,8 @@ class ParticleFilter(Node):
 
         self.n_particles = 300  # the number of particles to use
 
+        self.laser_dist_thresh = 0.25
 
-        self.laser_dist_thresh = 0.1
-        
         self.d_thresh = 0.2  # the amount of linear movement before performing an update
         self.a_thresh = (
             math.pi / 6
@@ -190,9 +189,9 @@ class ParticleFilter(Node):
             self.update_particles_with_odom()  # update based on odometry
             self.update_particles_with_laser(r, theta)  # update based on laser scan
             self.update_robot_pose()  # update robot's pose based on particles
+            # publish particles (so things like rviz can see them)
+            self.publish_particles(msg.header.stamp)
             self.resample_particles()  # resample particles to focus on areas of high density
-        # publish particles (so things like rviz can see them)
-        self.publish_particles(msg.header.stamp)
 
     def moved_far_enough_to_update(self, new_odom_xy_theta):
         return (
@@ -211,7 +210,7 @@ class ParticleFilter(Node):
             (2): compute the most likely pose (i.e. the mode of the distribution)
         """
         self.normalize_particles()
-        
+
         # TODO: assign the latest pose into self.robot_pose as a geometry_msgs.Pose object
         # just to get started we will fix the robot's pose to always be at the origin
         best_particle = Particle(w=0.0)
@@ -219,14 +218,15 @@ class ParticleFilter(Node):
             if particle.w > best_particle.w:
                 best_particle = particle
 
-        
         self.robot_pose = best_particle.as_pose()
         if hasattr(self, "odom_pose"):
             self.transform_helper.fix_map_to_odom_transform(
                 self.robot_pose, self.odom_pose
             )
         else:
-            self.get_logger().warn("Can't set map->odom transform since no odom data received")
+            self.get_logger().warn(
+                "Can't set map->odom transform since no odom data received"
+            )
 
     def update_particles_with_odom(self):
         """Update the particles using the newly given odometry pose.
@@ -305,7 +305,11 @@ class ParticleFilter(Node):
         print(particle_weight_sum)
         # resample particles through multinomial resampling
         new_particles = []
-        resampled_particles = draw_random_sample(self.particle_cloud, [particle.w for particle in self.particle_cloud], len(self.particle_cloud))
+        resampled_particles = draw_random_sample(
+            self.particle_cloud,
+            [particle.w for particle in self.particle_cloud],
+            len(self.particle_cloud),
+        )
         # cumulative_sum = 0
         # for _ in range(self.n_particles):
         #     rand_val = random.random()
@@ -332,12 +336,14 @@ class ParticleFilter(Node):
         for particle in self.particle_cloud:
             weight_counter = 0
             for i in range(len(r)):
+                if np.isinf(r[i]):
+                    continue
                 x_distance_offset = r[i] * np.cos(particle.theta + theta[i])
                 laser_x_coord = particle.x + x_distance_offset
                 y_distance_offset = r[i] * np.sin(particle.theta + theta[i])
                 laser_y_coord = particle.y + y_distance_offset
                 dist_from_obstacle = self.occupancy_field.get_closest_obstacle_distance(
-                    x_distance_offset, y_distance_offset
+                    laser_x_coord, laser_y_coord
                 )
                 if dist_from_obstacle < self.laser_dist_thresh:
                     weight = (
@@ -389,10 +395,10 @@ class ParticleFilter(Node):
         """Make sure the particle weights define a valid distribution (i.e. sum to 1.0)"""
         total_weight = np.sum([particle.w for particle in self.particle_cloud])
         for particle in self.particle_cloud:
-            print(f"Took particle with weight {particle.w} and updated it to have weight {particle.w / total_weight}")
+            print(
+                f"Took particle with weight {particle.w} and updated it to have weight {particle.w / total_weight}"
+            )
             particle.w = particle.w / total_weight
-            
-        
 
     def publish_particles(self, timestamp):
         msg = ParticleCloud()
