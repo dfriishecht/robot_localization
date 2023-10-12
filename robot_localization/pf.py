@@ -324,8 +324,9 @@ class ParticleFilter(Node):
         # use a Gaussian noise to add variance to each particles x and y position
         print(f"Number of particles: {len(self.particle_cloud)}")
         for particle in self.particle_cloud:
-            # particle.x = np.random.normal(loc=particle.x, scale=0.01)
-            # particle.y = np.random.normal(loc=particle.y, scale=0.01)
+            particle.x = np.random.normal(loc=particle.x, scale=0.01)
+            particle.y = np.random.normal(loc=particle.y, scale=0.01)
+            particle.theta = np.random.normal(loc=particle.theta, scale=0.1)
             particle.w = 0.0
 
     def update_particles_with_laser(self, r, theta):
