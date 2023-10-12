@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+# pylint: skip-file
 """ This is the starter code for the robot localization project """
 
 import rclpy
@@ -14,6 +14,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, Point, Quaternion
 from rclpy.duration import Duration
 import math
 import time
+import random
 import numpy as np
 from occupancy_field import OccupancyField
 from helper_functions import TFHelper
@@ -165,6 +166,10 @@ class ParticleFilter(Node):
         (r, theta) = self.transform_helper.convert_scan_to_polar_in_robot_frame(
             msg, self.base_frame
         )
+
+        (r, theta) = self.transform_helper.convert_scan_to_polar_in_robot_frame(
+            msg, self.base_frame
+        )
         print("r[0]={0}, theta[0]={1}".format(r[0], theta[0]))
         # clear the current scan so that we can process the next one
         self.scan_to_process = None
@@ -243,7 +248,49 @@ class ParticleFilter(Node):
             self.current_odom_xy_theta = new_odom_xy_theta
             return
 
-        # TODO: modify particles using delta
+        prev_x = old_odom_xy_theta[0]
+        prev_y = old_odom_xy_theta[1]
+        prev_theta = old_odom_xy_theta[2]
+        prev_odom_trans = np.array(
+            [
+                [np.cos(prev_theta), -1 * np.sin(prev_theta), prev_x],
+                [np.sin(prev_theta), np.cos(prev_theta), prev_y],
+                [0, 0, 1],
+            ]
+        )
+        new_x = new_odom_xy_theta[0]
+        new_y = new_odom_xy_theta[1]
+        new_theta = new_odom_xy_theta[2]
+        new_odom_trans = np.array(
+            [
+                [np.cos(new_theta), -1 * np.sin(new_theta), new_x],
+                [np.sin(new_theta), np.cos(new_theta), new_y],
+                [0, 0, 1],
+            ]
+        )
+        # Create a transformation matrix for applying relative odom transformations
+        relative_pos_delta = np.linalg.inv(prev_odom_trans) @ new_odom_trans
+
+        for particle in self.particle_cloud:
+            prev_particle_trans = np.array(
+                [
+                    [np.cos(particle.theta), -1 * np.sin(particle.theta), particle.x],
+                    [np.sin(particle.theta), np.cos(particle.theta), particle.y],
+                    [0, 0, 1],
+                ]
+            )
+            new_particle_trans = (
+                prev_particle_trans
+                @ relative_pos_delta
+                @ np.linalg.inv(prev_particle_trans)
+            )
+            prev_particle_coord = np.array([particle.x, particle.y, 1])
+            new_particle_vector = new_particle_trans @ prev_particle_coord
+            particle.x = new_particle_vector[0]
+            particle.y = new_particle_vector[1]
+            particle.theta += math.atan2(
+                relative_pos_delta[1][0], relative_pos_delta[0][0]
+            )
 
     def resample_particles(self):
         """Resample the particles according to the new particle weights.
@@ -253,20 +300,54 @@ class ParticleFilter(Node):
         """
         # make sure the distribution is normalized
         self.normalize_particles()
-        # TODO: fill out the rest of the implementation
+        # resample particles through multinomial resampling
+        resampled_particles = []
+        cumulative_sum = 0
+        for _ in range(self.n_particles):
+            rand_val = random.random()
+            cumulative_sum += rand_val
+            index = 0
+            while cumulative_sum > self.particle_cloud[index].w:
+                cumulative_sum -= self.particle_cloud[index].w
+                index += 1
+            resampled_particles.append(self.particle_cloud[index])
+
+        self.particle_cloud = resampled_particles
+        # use a Gaussian noise to add variance to each particles x and y position
+        for particle in self.particle_cloud:
+            particle.x = np.random.Generator.normal(loc=particle.x, scale=1.0)
+            particle.y = np.random.Generator.normal(loc=particle.y, scale=1.0)
+            particle.w = 0.0
 
     def update_particles_with_laser(self, r, theta):
         """Updates the particle weights in response to the scan data
         r: the distance readings to obstacles
         theta: the angle relative to the robot frame for each corresponding reading
         """
-        # TODO: implement this
+        for particle in self.particle_cloud:
+            weight_counter = 0
+            for i in range(len(r)):
+                x_distance_offset = r[i] * np.cos(particle.theta + theta[i])
+                laser_x_coord = particle.x + x_distance_offset
+                y_distance_offset = r[i] * np.sin(particle.theta + theta[i])
+                laser_y_coord = particle.y + y_distance_offset
+                dist_from_obstacle = self.occupancy_field.get_closest_obstacle_distance(
+                    x_distance_offset, y_distance_offset
+                )
+                if dist_from_obstacle < self.laser_dist_thresh:
+                    weight = (
+                        self.laser_dist_thresh - dist_from_obstacle
+                    ) / self.laser_dist_thresh
+                    weight_counter += weight
+            particle.w = weight_counter
         pass
 
     def update_initial_pose(self, msg):
         """Callback function to handle re-initializing the particle filter based on a pose estimate.
         These pose estimates could be generated by another ROS Node or could come from the rviz GUI
         """
+        """Callback function to handle re-initializing the particle filter based on a pose estimate.
+        These pose estimates could be generated by another ROS Node or could come from the rviz GUI"""
         xy_theta = self.transform_helper.convert_pose_to_xy_and_theta(msg.pose.pose)
         self.initialize_particle_cloud(msg.header.stamp, xy_theta)
 
@@ -276,6 +357,10 @@ class ParticleFilter(Node):
         xy_theta: a triple consisting of the mean x, y, and theta (yaw) to initialize the
                   particle cloud around.  If this input is omitted, the odometry will be used
         """
+        """Initialize the particle cloud.
+        Arguments
+        xy_theta: a triple consisting of the mean x, y, and theta (yaw) to initialize the
+                  particle cloud around.  If this input is omitted, the odometry will be used"""
         if xy_theta is None:
             xy_theta = self.transform_helper.convert_pose_to_xy_and_theta(
                 self.odom_pose
