@@ -86,4 +86,8 @@ y_p\\
 \end{bmatrix}
 $$
 
-The updated particle position vector is then applied to each particles x and y class variable.
+The updated particle position vector is then applied to each particles x and y cddddlass variable.
+
+##Particle Weight Update
+
+After a particle position update, we then assign every particle a inin. This process is done by leveraging the Neato's laser scan topic, which provides us with a point cloud from the Neato's LiDAR. Every point in the cloud represents where the liDAR encountered some obstacle/wall. When we transfer this point cloud to every particle in the pa
