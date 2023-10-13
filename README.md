@@ -5,13 +5,13 @@ Project by Dexter Friis-Hecht & Ben Tarr. Source code written by Paul Ruvolo
 
 The project is focused on an implementation of a particle-filter algorithm, which is used to localize a robot within a known environment. This is done in a couple of steps:
 - A hypothetical position for the robot is initialized within the mapped area.
-- "Particles" are distributed around this position. Each particle has its own pose, similarily to the robot.
+- "Particles" are distributed around this position. Each particle has its own pose, similarly to the robot.
 - As the robot navigates the environment, its odometry data is used to update each particle's position.
-- After each position update, laser scan readings from the robot are transfered onto each particle, and measured distances from obstacles are compared between the particles and robot.
+- After each position update, laser scan readings from the robot are transferred onto each particle, and measured distances from obstacles are compared between the particles and robot.
 - Particles with laser readings close to the robot readings are assigned a weight, with a greater weight the closer the particles are.
 - Particles with a low weight are redistributed on the high weight particles.
-- These new distributes are used to contionusly update the robot's hypothetical position.
-- Over time, as the robot moves about the environment more, the particles converge on the robot's true position, resulting in the robots position within the environment becomming known.
+- These new distributes are used to continuously update the robot's hypothetical position.
+- Over time, as the robot moves about the environment more, the particles converge on the robot's true position, resulting in the robots position within the environment becoming known.
 
 This report will go over each of these steps, detailing approach, actions the code performs, and limitations.
 
@@ -86,13 +86,18 @@ y_p\\
 \end{bmatrix}
 $$
 
-The updated particle position vector is then applied to each particles x and y cddddlass variable.
+The updated particle position vector is then applied to each particles x and y coordinate variable.
 
 ## Particle Weight Update
 
 After a particle position update, we then assign every particle a weight. This process is done by leveraging the Neato's laser scan topic, which provides us with a point cloud from the Neato's LiDAR. Every point in the cloud represents where the liDAR encountered some obstacle/wall. When we transfer this point cloud to every particle in the particle cloud, we end up with the Neato's LiDAR readings positioned at every particle. This is done with the following equation:
 $$x_{off} = dist_l * cos(\theta_p + \theta_l),  x_{coord} = x_p + x_{off}$$
 Where $x_{off}$ is the amount to offset the laser coordinate from the particle on the x axis, $dist_l$ is the distance from the point to the particle, $\theta_p$ is the orientation of the particle, and $\theta_l$ is the orientation of the particle. For every particle, we check how far each laser point is from its nearest obstacle. Points closer to an obstacle get a higher weight than points further away. The weights for every point associated with a particle are summed up, and that becomes the particle's weight.
+
+
+<div style="text-align:center">
+<img src="robot_localization/report_images/laser_weight.png" alt="Particle gaining weights from laser scan" />
+</div>
 
 ## Particle Resampling
 
@@ -102,5 +107,5 @@ total_weight = np.sum([particle.w for particle in self.particle_cloud]) # use a 
         for particle in self.particle_cloud: # iterate through each particle
             particle.w = particle.w / total_weight # divide the current weight by the calculated total weight
 ```
-We then draw samples from the list of normalized particles, with each particle's weight corresponding to its likelihood of being resampled. We draw these weighted samples until we have the same number of particles that we had previously. However, if we purely duplicate particles with a high weight, we end up with particles layered directly on top of each other, which doesn't assist in localizating the robots posistion. To mediate this, each resampled particle's posistion is modified with a Gaussian noise, ensuring some extra variance in resampled particle posistion.
+We then draw samples from the list of normalized particles, with each particle's weight corresponding to its likelihood of being resampled. We draw these weighted samples until we have the same number of particles that we had previously. However, if we purely duplicate particles with a high weight, we end up with particles layered directly on top of each other, which doesn't assist in localizing the robots position. To mediate this, each resampled particle's position is modified with a Gaussian noise, ensuring some extra variance in resampled particle position.
 
