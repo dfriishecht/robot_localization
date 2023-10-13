@@ -111,3 +111,8 @@ total_weight = np.sum([particle.w for particle in self.particle_cloud]) # use a 
 ```
 We then draw samples from the list of normalized particles, with each particle's weight corresponding to its likelihood of being resampled. We draw these weighted samples until we have the same number of particles that we had previously. However, if we purely duplicate particles with a high weight, we end up with particles layered directly on top of each other, which doesn't assist in localizing the robots position. To mediate this, each resampled particle's position is modified with a Gaussian noise, ensuring some extra variance in resampled particle position.
 
+<div style="text-align:center">
+<img src="report_images/laser_resample.png" alt="Particles resampling onto high weight particles" />
+</div>
+
+*Fig 2. A cluster of particles, with the green particle having the highest weight. The lower weight particles are resampled onto the high weight particle.*
