@@ -108,7 +108,7 @@ The updated particle position vector is then applied to each particles x and y c
 
 ## Particle Weight Update
 
-After a particle position update, we then assign every particle a weight. This process is done by leveraging the Neato's laser scan topic, which provides us with a point cloud from the Neato's LiDAR. Every point in the cloud represents where the liDAR encountered some obstacle/wall. When we transfer this point cloud to every particle in the particle cloud, we end up with the Neato's LiDAR readings positioned at every particle. This is done with the following equation:
+After a particle position update, we assign every particle a weight. This process is done by leveraging the Neato's laser scan topic, which provides us with a point cloud from the Neato's LiDAR. Every point in the cloud represents a position where the LiDAR encountered some obstacle/wall. When we transfer this point cloud to every particle in the particle cloud, we end up with the Neato's LiDAR readings positioned at every particle. This is done with the following equation:
 $$x_{off} = dist_l * cos(\theta_p + \theta_l),  x_{coord} = x_p + x_{off}$$
 Where $x_{off}$ is the amount to offset the laser coordinate from the particle on the x axis, $dist_l$ is the distance from the point to the particle, $\theta_p$ is the orientation of the particle, and $\theta_l$ is the orientation of the particle. For every particle, we check how far each laser point is from its nearest obstacle. Points closer to an obstacle get a higher weight than points further away. The weights for every point associated with a particle are summed up, and that becomes the particle's weight.
 
@@ -122,6 +122,7 @@ Where $x_{off}$ is the amount to offset the laser coordinate from the particle o
 ## Particle Resampling
 
 With each particle assigned a weight based on its quality, the next step is to resample them. This process removes low-quality particles, and redistributes them at the location of high quality particles. This ensures that when the particles positions are updated again, there is a greater quantity of particles with a higher chance of being in the robot's true position. To resample the particles, we first normalize all of their weights. The weights of all of the particles must add up to exactly 1 so that it defines a valid distribution. To make sure that this is the case, there is a `normalize_particles` function. Essentially, we sum up the weights of all of the particles, and then divide the weight of each particle by the sum. This is how it's implemented in Python code:
+
 ```python
 total_weight = np.sum([particle.w for particle in self.particle_cloud]) # use a list comprehension to extract a list of the weights, and then sum the result
         for particle in self.particle_cloud: # iterate through each particle
@@ -155,9 +156,9 @@ Initially, we faced a lot of challenges with integrating all of our code. We fou
 
 ### Future Improvements
 
-In the future, it would be nice to make the filter slightly more stable over time. Right now it has a tendency to jump around a lot. This is most likely due to the fact that we select the singular particle with the highest weight instead of averaging the particles in some way. Another improvement that we can make is to increase the computational efficiency so we can use larger numbers of particles.
+In the future, it would be nice to make the filter slightly more stable over time. Right now it has a tendency to jitter as it localizes the robot. This is most likely due to the fact that we select the singular particle with the highest weight instead of averaging the particles in some way. Additionally, we could store multiple particle updates instead of just the previous, and then preform resampling/postion updates based on each particle's cumulative weight over multiple steps. Another improvement that we can make is to increase the computational efficiency so we can use larger numbers of particles. This could be done by converting some of our list iterations using for loops into matrix operations.
 
 ### Lessons Learned
 
-It was sometimes difficult to schedule work time due to busy schedules. In the future planning ways to work more asynchronously might be beneficial. In addition, I think that having all of the functions completed earlier on so that integration testing could be performed sooner would be good.
+It was sometimes difficult to schedule work time due to busy schedules. In the future planning ways to work more asynchronously might be beneficial. In conjuction with this, having all of the functions completed earlier on so that integration testing could be performed sooner would be good. On the flip side, since the code already came with ROS2 functionality, we could focus more on the algorithmic design of a particle filter, rather than just getting all of the data in a usable state. Since we had more time for focusing just on the algorithm, we were able to learn more deeply about the concepts, especially with regard to matrix and frame transformations. The project also gave us good experience with jumping into an already existing codebase, and utilizing previously written code to our advantage. Instead of working from scratch, this project encouraged us to read carefully through existing code/documentation, which will be a useful skill for future collaborative projects.
 
