@@ -99,6 +99,8 @@ Where $x_{off}$ is the amount to offset the laser coordinate from the particle o
 <img src="report_images/laser_weight.png" alt="Particle gaining weights from laser scan" />
 </div>
 
+*Fig 1. A particle with the robot point-cloud applied to itself. Red points have a higher weight due to being closer to the obstacle.*
+
 ## Particle Resampling
 
 With each particle assigned a weight based on its quality, the next step is to resample them. This process removes low-quality particles, and redistributes them at the location of high quality particles. This ensures that when the particles positions are updated again, there is a greater quantity of particles with a higher chance of being in the robot's true position. To resample the particles, we first normalize all of their weights. The weights of all of the particles must add up to exactly 1 so that it defines a valid distribution. To make sure that this is the case, there is a `normalize_particles` function. Essentially, we sum up the weights of all of the particles, and then divide the weight of each particle by the sum. This is how it's implemented in Python code:
