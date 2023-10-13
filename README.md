@@ -101,6 +101,7 @@ y_p\\
 $$
 
 The updated particle position vector is then applied to each particles x and y coordinate variable.
+
  ![gif](report_images/particle_update.gif)
 
 *Fig 1. The particles updating with changes in odom position. Both rotation and position are copied to the particles.*
