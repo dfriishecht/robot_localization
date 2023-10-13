@@ -144,3 +144,20 @@ To determine the actual displayed pose of the robot from the particle cloud, we 
 </div>
 
 *Fig 3. A cluster of particles, with one particle having a higher weight than the rest. The robot's pose is updated to be the pose of the high weight particle.*
+
+Each of the steps listed above occur in sequence every time the particle's positions are updated by the robot's odometry data. Over time, this will result in the particles converging and localizing on the robot's true position.
+
+## Challenges
+
+Initially, we faced a lot of challenges with integrating all of our code. We found that debugging was very difficult due to the number of potential places for an issue to be. We found that conceptually thinking about each function from a high level aided in determening which function a bug belonged to. Eventually, office hours proved to be a very valuable tool for us to work through issues and get assistance.
+
+## Project Reflection
+
+### Future Improvements
+
+In the future, it would be nice to make the filter slightly more stable over time. Right now it has a tendency to jump around a lot. This is most likely due to the fact that we select the singular particle with the highest weight instead of averaging the particles in some way. Another improvement that we can make is to increase the computational efficiency so we can use larger numbers of particles.
+
+### Lessons Learned
+
+It was sometimes difficult to schedule work time due to busy schedules. In the future planning ways to work more asynchronously might be beneficial. In addition, I think that having all of the functions completed earlier on so that integration testing could be performed sooner would be good.
+
