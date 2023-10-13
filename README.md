@@ -96,7 +96,7 @@ Where $x_{off}$ is the amount to offset the laser coordinate from the particle o
 
 
 <div style="text-align:center">
-<img src="robot_localization/report_images/laser_weight.png" alt="Particle gaining weights from laser scan" />
+<img src="report_images/laser_weight.png" alt="Particle gaining weights from laser scan" />
 </div>
 
 ## Particle Resampling
