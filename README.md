@@ -102,6 +102,12 @@ $$
 
 The updated particle position vector is then applied to each particles x and y coordinate variable.
 
+<div style="text-align:center">
+<img src="report_images/particle_update.gif" alt="Particle gaining weights from laser scan" />
+</div>
+
+*Fig 1. The particles updating with changes in odom position. Both rotation and position are copied to the particles.*
+
 ## Particle Weight Update
 
 After a particle position update, we then assign every particle a weight. This process is done by leveraging the Neato's laser scan topic, which provides us with a point cloud from the Neato's LiDAR. Every point in the cloud represents where the liDAR encountered some obstacle/wall. When we transfer this point cloud to every particle in the particle cloud, we end up with the Neato's LiDAR readings positioned at every particle. This is done with the following equation:
