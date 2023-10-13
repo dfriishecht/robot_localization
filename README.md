@@ -124,3 +124,5 @@ To determine the actual displayed pose of the robot from the particle cloud, we 
 <div style="text-align:center">
 <img src="report_images/robot_pose.png" alt="Particles updating robot pose." />
 </div>
+
+*Fig 3. A cluster of particles, with one particle having a higher weight than the rest. The robot's pose is updated to be the pose of the high weight particle.*
