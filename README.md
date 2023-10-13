@@ -150,7 +150,7 @@ Each of the steps listed above occur in sequence every time the particle's posit
 
  ![gif](report_images/particle_mac.gif)
 
- *Fig 4. Robot position estimated by particle filter. Particles are in red, with estimated robot pose being the large arrow. As the robot moves, the particles are update and converge on robot position.*
+ *Fig 4. Robot position estimated by particle filter. Particles are the red point cluster, with estimated robot pose being the large arrow. As the robot moves, the particles are update and converge on robot position.*
 
 ## Challenges
 
