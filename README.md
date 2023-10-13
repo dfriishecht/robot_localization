@@ -148,6 +148,10 @@ To determine the actual displayed pose of the robot from the particle cloud, we 
 
 Each of the steps listed above occur in sequence every time the particle's positions are updated by the robot's odometry data. Over time, this will result in the particles converging and localizing on the robot's true position.
 
+ ![gif](report_images/particle_mac.gif)
+
+ *Fig 4. Robot position estimated by particle filter. Particles are in red, with estimated robot pose being the large arrow. As the robot moves, the particles are update and converge on robot position.*
+
 ## Challenges
 
 Initially, we faced a lot of challenges with integrating all of our code. We found that debugging was very difficult due to the number of potential places for an issue to be. We found that conceptually thinking about each function from a high level aided in determining which function a bug belonged to. Eventually, office hours proved to be a very valuable tool for us to work through issues and get assistance.
