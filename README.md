@@ -15,8 +15,22 @@ The project is focused on an implementation of a particle-filter algorithm, whic
 
 This report will go over each of these steps, detailing approach, actions the code performs, and limitations.
 
-## Position and Particle Initialization
 
+## Particle Cloud Initialization
+
+We use the `initialize_particle_cloud` to create an initial cloud of particles around an assumed starting location. Because the starting location is not known with high precision, spreading the particles out with a gaussian distribution is helpful to allow the particles to efficiently converge on the true location of the robot.
+
+To generate the gaussian distribution, the `np.random.normal` function is used in the following manner:
+```python
+for i in range(self.n_particles): # iterate once for each particle
+    self.particle_cloud.append( # add the following particle to the cloud
+        Particle( # create a new Particle object
+            np.random.normal(xy_theta[0], xy_scale), # gaussian distribution for x
+            np.random.normal(xy_theta[1], xy_scale), # gaussian distribution for y
+            np.random.normal(xy_theta[2], theta_scale), # gaussian distribution for z
+        )
+    )
+```
 
 ## Particle Position Update
 
