@@ -101,3 +101,6 @@ With each particle assigned a weight based on its quality, the next step is to r
 total_weight = np.sum([particle.w for particle in self.particle_cloud]) # use a list comprehension to extract a list of the weights, and then sum the result
         for particle in self.particle_cloud: # iterate through each particle
             particle.w = particle.w / total_weight # divide the current weight by the calculated total weight
+```
+We then draw samples from the list of normalized particles, with each particle's weight corresponding to its likelihood of being resampled. We draw these weighted samples until we have the same number of particles that we had previously. However, if we purely duplicate particles with a high weight, we end up with particles layered directly on top of each other, which doesn't assist in localizating the robots posistion. To mediate this, each resampled particle's posistion is modified with a Gaussian noise, ensuring some extra variance in resampled particle posistion.
+
