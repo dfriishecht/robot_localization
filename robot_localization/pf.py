@@ -52,8 +52,6 @@ class Particle(object):
             orientation=Quaternion(x=q[0], y=q[1], z=q[2], w=q[3]),
         )
 
-    # TODO: define additional helper functions if needed
-
 
 class ParticleFilter(Node):
     """The class that represents a Particle Filter ROS Node
@@ -92,8 +90,6 @@ class ParticleFilter(Node):
         self.a_thresh = (
             math.pi / 6
         )  # the amount of angular movement before performing an update
-
-        # TODO: define additional constants if needed
 
         # pose_listener responds to selection of a new approximate robot location (for instance using rviz)
         self.create_subscription(
@@ -211,7 +207,6 @@ class ParticleFilter(Node):
         """
         self.normalize_particles()
 
-        # TODO: assign the latest pose into self.robot_pose as a geometry_msgs.Pose object
         # just to get started we will fix the robot's pose to always be at the origin
         best_particle = Particle(w=0.0)
         for particle in self.particle_cloud:
@@ -304,21 +299,12 @@ class ParticleFilter(Node):
         print("Particle weight sum:")
         print(particle_weight_sum)
         # resample particles through multinomial resampling
-        new_particles = []
         resampled_particles = draw_random_sample(
             self.particle_cloud,
             [particle.w for particle in self.particle_cloud],
             len(self.particle_cloud),
         )
-        # cumulative_sum = 0
-        # for _ in range(self.n_particles):
-        #     rand_val = random.random()
-        #     cumulative_sum += rand_val
-        #     index = 0
-        #     while cumulative_sum > self.particle_cloud[index].w:
-        #         cumulative_sum -= self.particle_cloud[index].w
-        #         index += 1
-        #     resampled_particles.append(self.particle_cloud[index])
+
         self.particle_cloud = resampled_particles
 
         # use a Gaussian noise to add variance to each particles x and y position
